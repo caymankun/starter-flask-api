@@ -1,43 +1,50 @@
 from flask import Flask, request, send_file, jsonify
+from yt_dlp import YoutubeDL
 import subprocess
 
 app = Flask(__name__)
 
-@app.route('/v', methods=['GET'])
+@app.route('/download_video', methods=['GET'])
 def download_video():
-    # GETリクエストから動画のURLを取得
-    video_url = request.args.get('url')
+    video_url = request.args.get('video_url')
+    if not video_url:
+        return jsonify({'error': '動画のURLが提供されていません'}), 400
 
-    if video_url:
-        # yt-dlpを使用して動画をダウンロード
-        result = subprocess.run(['yt-dlp', '-f', 'best', '-o', '%(title)s.%(ext)s', video_url], capture_output=True, text=True)
-
-        # ダウンロードが成功したかどうかをチェック
-        if result.returncode == 0:
-            # ダウンロードされた動画ファイルをブラウザに提供する
-            return send_file(f'{result.stdout.strip()}', as_attachment=True)
-        else:
+    ydl_opts = {
+        'format': 'best',
+        'outtmpl': '%(title)s.%(ext)s',
+    }
+    with YoutubeDL(ydl_opts) as ydl:
+        try:
+            info_dict = ydl.extract_info(video_url, download=True)
+            filename = ydl.prepare_filename(info_dict)
+            return send_file(filename, as_attachment=True)
+        except Exception as e:
+            print('動画のダウンロードに失敗しました:', str(e))
             return jsonify({'error': '動画のダウンロードに失敗しました'}), 500
-    else:
-        return jsonify({'error': '動画のURLが提供されていません'}), 400
 
-@app.route('/a', methods=['GET'])
+@app.route('/download_audio', methods=['GET'])
 def download_audio():
-    # GETリクエストから動画のURLを取得
-    video_url = request.args.get('url')
-
-    if video_url:
-        # yt-dlpを使用して音楽をダウンロード
-        result = subprocess.run(['yt-dlp', '--extract-audio', '--audio-format', 'mp3', '-o', '%(title)s.%(ext)s', video_url], capture_output=True, text=True)
-
-        # ダウンロードが成功したかどうかをチェック
-        if result.returncode == 0:
-            # ダウンロードされた音楽ファイルをブラウザに提供する
-            return send_file(f'{result.stdout.strip()}', as_attachment=True)
-        else:
-            return jsonify({'error': '音楽のダウンロードに失敗しました'}), 500
-    else:
+    video_url = request.args.get('video_url')
+    if not video_url:
         return jsonify({'error': '動画のURLが提供されていません'}), 400
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': '%(title)s.%(ext)s',
+    }
+    with YoutubeDL(ydl_opts) as ydl:
+        try:
+            info_dict = ydl.extract_info(video_url, download=True)
+            filename = ydl.prepare_filename(info_dict)
+            mp3_filename = filename.split('.')[0] + '.mp3'
+            # ffmpegを使用して音声をMP3に変換
+            subprocess.run(['ffmpeg', '-i', filename, '-vn', '-ar', '44100', '-ac', '2', '-ab', '192k', '-f', 'mp3', mp3_filename], capture_output=True)
+            return send_file(mp3_filename, as_attachment=True)
+        except Exception as e:
+            print('音楽のダウンロードに失敗しました:', str(e))
+            return jsonify({'error': '音楽のダウンロードに失敗しました'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
+
