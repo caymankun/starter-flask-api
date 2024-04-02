@@ -46,4 +46,4 @@ def download_audio():
             return jsonify({'error': '音楽のダウンロードに失敗しました'}), 500
             
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
+    app.run(host='0.0.0.0')
