@@ -1,8 +1,10 @@
 from flask import Flask, request, send_file, jsonify
 from yt_dlp import YoutubeDL
 import subprocess
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/v', methods=['GET'])
 def download_video():
