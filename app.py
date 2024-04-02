@@ -44,7 +44,6 @@ def download_audio():
         except Exception as e:
             print('音楽のダウンロードに失敗しました:', str(e))
             return jsonify({'error': '音楽のダウンロードに失敗しました'}), 500
-
+            
 if __name__ == '__main__':
-    app.run(debug=True)
-
+    app.run(debug=True, port=int(os.environ.get('PORT', 5000)))
