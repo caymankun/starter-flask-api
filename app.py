@@ -4,9 +4,9 @@ import subprocess
 
 app = Flask(__name__)
 
-@app.route('/download_video', methods=['GET'])
+@app.route('/v', methods=['GET'])
 def download_video():
-    video_url = request.args.get('video_url')
+    video_url = request.args.get('url')
     if not video_url:
         return jsonify({'error': '動画のURLが提供されていません'}), 400
 
@@ -23,9 +23,9 @@ def download_video():
             print('動画のダウンロードに失敗しました:', str(e))
             return jsonify({'error': '動画のダウンロードに失敗しました'}), 500
 
-@app.route('/download_audio', methods=['GET'])
+@app.route('/a', methods=['GET'])
 def download_audio():
-    video_url = request.args.get('video_url')
+    video_url = request.args.get('url')
     if not video_url:
         return jsonify({'error': '動画のURLが提供されていません'}), 400
 
